@@ -1,0 +1,29 @@
+{
+  "login": {
+    "login_button": "[data-testid='loginButton']",
+    "username_input": "input[name='text']",
+    "password_input": "input[name='password']",
+    "next_button": "[data-testid='LoginForm_Login_Button']",
+    "login_form": "[data-testid='LoginForm']"
+  },
+  "search": {
+    "search_input": "[data-testid='SearchBox_Search_Input']",
+    "search_button": "[data-testid='SearchBox_Search_Button']"
+  },
+  "post_actions": {
+    "follow_button": "[data-testid*='follow']",
+    "repost_button": "[data-testid='retweet']",
+    "repost_confirm": "[data-testid='retweetConfirm']",
+    "like_button": "[data-testid='like']"
+  },
+  "timeline": {
+    "post_links": "a[href*='/status/']",
+    "article_container": "[data-testid='tweet']"
+  },
+  "fallback": {
+    "follow_button_alt": "button:has-text('フォロー')",
+    "repost_button_alt": "button:has-text('リポスト')",
+    "like_button_alt": "button:has-text('いいね')",
+    "search_input_alt": "input[placeholder*='検索']"
+  }
+}

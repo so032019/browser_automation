@@ -1,0 +1,257 @@
+# ====================
+# X自動化ツール用 .gitignore
+# ====================
+
+# 機密情報・設定ファイル
+# ====================
+.env
+.env.local
+.env.production
+.env.staging
+*.key
+*.pem
+*.p12
+*.pfx
+auto_repost/config/credentials.json
+auto_repost/config/secrets.json
+auto_repost/config/auth.json
+
+# ログファイル
+# ====================
+auto_repost/logs/
+auto_repost/custom_logs/
+*.log
+*.log.*
+log_*.txt
+error_*.log
+execution_*.log
+x_automation_*.log
+
+# Python関連
+# ====================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 仮想環境
+# ====================
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+.env/
+pyvenv.cfg
+
+# IDE・エディタ関連
+# ====================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ブラウザ関連
+# ====================
+browser_data/
+user_data/
+cookies/
+*.cookies
+browser_cache/
+playwright_cache/
+.playwright/
+
+# 一時ファイル・キャッシュ
+# ====================
+tmp/
+temp/
+cache/
+.cache/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# スクリーンショット・メディア
+# ====================
+screenshots/
+images/
+videos/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.mp4
+*.avi
+*.mov
+!auto_repost/docs/images/
+!auto_repost/examples/images/
+
+# データファイル
+# ====================
+data/
+output/
+results/
+*.csv
+*.json.bak
+*.db
+*.sqlite
+*.sqlite3
+
+# OS関連
+# ====================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# 実行時生成ファイル
+# ====================
+*.pid
+*.lock
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# パッケージ管理
+# ====================
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Jupyter Notebook
+# ====================
+.ipynb_checkpoints
+
+# pyenv
+# ====================
+.python-version
+
+# pipenv
+# ====================
+Pipfile.lock
+
+# poetry
+# ====================
+poetry.lock
+
+# Celery
+# ====================
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath
+# ====================
+*.sage.py
+
+# Spyder
+# ====================
+.spyderproject
+.spyproject
+
+# Rope
+# ====================
+.ropeproject
+
+# mkdocs
+# ====================
+/site
+
+# mypy
+# ====================
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+# ====================
+.pyre/
+
+# pytype
+# ====================
+.pytype/
+
+# Cython
+# ====================
+cython_debug/
+
+# プロジェクト固有の除外ファイル
+# ====================
+# 実行結果ファイル
+auto_repost/execution_results/
+auto_repost/post_urls.txt
+auto_repost/processed_posts.json
+
+# テスト関連
+auto_repost/test_output/
+auto_repost/test_results/
+*.test.log
+
+# バックアップファイル
+*.backup.*
+backup_*/
+
+# 設定ファイルのバックアップ
+auto_repost/config/*.bak
+auto_repost/config/*.backup
+
+# 開発用ファイル
+dev_*
+debug_*
+test_*
+sample_*
+
+# ドキュメント生成ファイル
+auto_repost/docs/_build/
+auto_repost/docs/build/
+
+# 実行時設定
+auto_repost/runtime_config.json
+auto_repost/last_execution.json
+auto_repost/session_data.json
+
+# Kiro IDE関連（プロジェクト固有）
+# ====================
+.kiro/
+
+# 一時的なHTMLファイル
+# ====================
+tmp/
