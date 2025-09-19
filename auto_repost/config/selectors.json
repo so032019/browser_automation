@@ -14,7 +14,10 @@
     "follow_button": "[data-testid*='follow']",
     "repost_button": "[data-testid='retweet']",
     "repost_confirm": "[data-testid='retweetConfirm']",
-    "like_button": "[data-testid='like']"
+    "like_button": "[data-testid='like']",
+    "unlike_button": "[data-testid='unlike']",
+    "unretweet_button": "[data-testid='unretweet']",
+    "unfollow_button": "[data-testid*='unfollow']"
   },
   "timeline": {
     "post_links": "a[href*='/status/']",
@@ -24,6 +27,9 @@
     "follow_button_alt": "button:has-text('フォロー')",
     "repost_button_alt": "button:has-text('リポスト')",
     "like_button_alt": "button:has-text('いいね')",
-    "search_input_alt": "input[placeholder*='検索']"
+    "search_input_alt": "input[placeholder*='検索']",
+    "unlike_button_alt": "button:has-text('いいねしました')",
+    "unretweet_button_alt": "button:has-text('リポスト済み')",
+    "unfollow_button_alt": "button:has-text('フォロー中')"
   }
 }

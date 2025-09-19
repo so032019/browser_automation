@@ -34,9 +34,9 @@ show_usage() {
     echo "  $0  # デフォルト（ヘッドレス、10ポスト、Slack通知あり）"
 }
 
-# デフォルト設定
+# デフォルト設定（より安全な設定）
 HEADLESS_MODE="--headless"
-MAX_POSTS="10"
+MAX_POSTS="3"  # デフォルトを3に変更（より安全）
 DEBUG_MODE=""
 SKIP_SLACK=""
 

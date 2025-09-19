@@ -6,6 +6,7 @@
 import asyncio
 import re
 import urllib.parse
+import random
 from datetime import datetime
 from typing import List, Set
 from playwright.async_api import Page, TimeoutError as PlaywrightTimeoutError
@@ -28,6 +29,16 @@ class SearchHandler:
         self.selector_manager = SelectorManager()
         self.search_selectors = self.selector_manager.get_search_selectors()
         self.timeline_selectors = self.selector_manager.get_timeline_selectors()
+
+        # 人間らしい検索動作の設定
+        self.human_search_behavior = {
+            'scroll_speed_min': 500,    # スクロール速度（ミリ秒）
+            'scroll_speed_max': 1500,
+            'reading_time_min': 2000,   # 読み込み時間
+            'reading_time_max': 5000,
+            'pause_chance': 0.2,        # 一時停止の確率
+            'back_scroll_chance': 0.1,  # 戻りスクロールの確率
+        }
 
     def generate_search_query(self) -> str:
         """
@@ -126,8 +137,8 @@ class SearchHandler:
                     await self.page.goto(search_url, timeout=10000)
                     self.logger.info("基本ナビゲーション完了")
 
-            # 追加の読み込み待機
-            await asyncio.sleep(3)
+            # 人間らしい読み込み待機
+            await self._human_like_page_wait()
 
             # 現在のURLを確認
             current_url = self.page.url
@@ -310,8 +321,8 @@ class SearchHandler:
             if len(collected_urls) >= target_count:
                 break
 
-            # スクロール実行
-            await self.scroll_to_load_more()
+            # 人間らしいスクロール実行
+            await self._human_like_scroll_to_load_more()
             scroll_attempts += 1
 
         result_urls = list(collected_urls)[:target_count]
@@ -399,3 +410,95 @@ class SearchHandler:
         except Exception as e:
             self.logger.error("スクロール中にエラーが発生しました", exception=e)
             return False
+
+    async def _human_like_page_wait(self):
+        """
+        人間らしいページ読み込み待機
+        """
+        try:
+            # 基本的な読み込み待機
+            base_wait = random.uniform(2.0, 4.0)
+            await asyncio.sleep(base_wait)
+
+            # 稀に長い待機（他のことをしている状況）
+            if random.random() < 0.1:  # 10%の確率
+                extra_wait = random.uniform(3.0, 8.0)
+                self.logger.debug(f"長時間待機を実行: {extra_wait:.2f}秒")
+                await asyncio.sleep(extra_wait)
+
+        except Exception as e:
+            self.logger.error("人間らしい待機中にエラー", exception=e)
+
+    async def _human_like_scroll_to_load_more(self) -> bool:
+        """
+        人間らしいスクロール動作
+
+        Returns:
+            bool: スクロール成功/失敗
+        """
+        try:
+            # 現在のスクロール位置を取得
+            previous_height = await self.page.evaluate("document.body.scrollHeight")
+
+            # 人間らしいスクロール動作
+            await self._simulate_human_scrolling()
+
+            # 読み込み待機（人間らしい時間）
+            reading_time = random.randint(
+                self.human_search_behavior['reading_time_min'],
+                self.human_search_behavior['reading_time_max']
+            )
+            await asyncio.sleep(reading_time / 1000)
+
+            # 新しいコンテンツが読み込まれたかチェック
+            new_height = await self.page.evaluate("document.body.scrollHeight")
+
+            if new_height > previous_height:
+                self.logger.debug(f"人間らしいスクロール成功: {previous_height} -> {new_height}")
+                return True
+            else:
+                self.logger.debug("新しいコンテンツが読み込まれませんでした")
+                return False
+
+        except Exception as e:
+            self.logger.error("人間らしいスクロール中にエラー", exception=e)
+            return False
+
+    async def _simulate_human_scrolling(self):
+        """
+        人間らしいスクロール動作をシミュレート
+        """
+        try:
+            # 複数回に分けてスクロール
+            scroll_steps = random.randint(3, 7)
+
+            for i in range(scroll_steps):
+                # スクロール距離をランダムに
+                scroll_distance = random.randint(200, 600)
+
+                # スクロール実行
+                await self.page.mouse.wheel(0, scroll_distance)
+
+                # ステップ間の遅延
+                step_delay = random.randint(200, 800)
+                await asyncio.sleep(step_delay / 1000)
+
+                # 一時停止（人間が読んでいる状況）
+                if random.random() < self.human_search_behavior['pause_chance']:
+                    pause_time = random.uniform(1.0, 3.0)
+                    self.logger.debug(f"読み込み一時停止: {pause_time:.2f}秒")
+                    await asyncio.sleep(pause_time)
+
+                # 戻りスクロール（人間が見逃したものを確認）
+                if random.random() < self.human_search_behavior['back_scroll_chance']:
+                    back_distance = random.randint(100, 300)
+                    await self.page.mouse.wheel(0, -back_distance)
+                    await asyncio.sleep(random.uniform(0.5, 1.5))
+                    await self.page.mouse.wheel(0, back_distance)
+                    self.logger.debug("戻りスクロールを実行")
+
+            # 最終的にページ下部まで移動
+            await self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+
+        except Exception as e:
+            self.logger.error("人間らしいスクロールシミュレート中にエラー", exception=e)

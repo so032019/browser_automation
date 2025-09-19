@@ -7,6 +7,7 @@ PlaywrightベースのX自動化ツール
 import asyncio
 import argparse
 import sys
+import random
 from pathlib import Path
 
 # プロジェクトルートをPythonパスに追加
@@ -133,6 +134,12 @@ async def main():
             logger.info(f"ポスト {i}/{len(post_urls)} 処理中: {url}")
 
             try:
+                # ポスト間遅延（30秒以内）
+                if i > 1:  # 最初のポスト以外
+                    inter_post_delay = random.uniform(10.0, 30.0)  # 10-30秒の遅延
+                    logger.info(f"ポスト間遅延: {inter_post_delay:.1f}秒")
+                    await asyncio.sleep(inter_post_delay)
+
                 # 全アクションを実行
                 action_results = await action_handler.perform_all_actions(url)
 

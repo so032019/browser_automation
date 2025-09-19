@@ -141,7 +141,10 @@ class SelectorManager:
             'follow_button': self.config.get_selectors_with_fallback('post_actions', 'follow_button'),
             'repost_button': self.config.get_selectors_with_fallback('post_actions', 'repost_button'),
             'repost_confirm': self.config.get_selectors_with_fallback('post_actions', 'repost_confirm'),
-            'like_button': self.config.get_selectors_with_fallback('post_actions', 'like_button')
+            'like_button': self.config.get_selectors_with_fallback('post_actions', 'like_button'),
+            'unlike_button': self.config.get_selectors_with_fallback('post_actions', 'unlike_button'),
+            'unretweet_button': self.config.get_selectors_with_fallback('post_actions', 'unretweet_button'),
+            'unfollow_button': self.config.get_selectors_with_fallback('post_actions', 'unfollow_button')
         }
 
     def get_timeline_selectors(self) -> Dict[str, List[str]]:

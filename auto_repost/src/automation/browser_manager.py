@@ -32,13 +32,18 @@ class BrowserManager:
         # Cookie保存用のディレクトリ
         self.user_data_dir = "/tmp/x_automation_profile"
 
-        # User-Agentのリスト
+        # より多様なUser-Agentのリスト（最新版を含む）
         self.user_agents = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0"
         ]
 
     async def launch_browser(self) -> Browser:
@@ -76,7 +81,7 @@ class BrowserManager:
                 launch_options['executable_path'] = self.browser_path
                 self.logger.info(f"カスタムブラウザを使用: {self.browser_path}")
 
-            # ステルスモード用の追加オプション
+            # ステルスモード用の追加オプション（より高度な検出回避）
             if self.stealth:
                 launch_options['args'].extend([
                     '--disable-blink-features=AutomationControlled',
@@ -84,7 +89,6 @@ class BrowserManager:
                     '--disable-extensions',
                     '--disable-plugins',
                     '--disable-web-security',
-                    '--disable-features=VizDisplayCompositor',
                     '--disable-ipc-flooding-protection',
                     '--disable-renderer-backgrounding',
                     '--disable-backgrounding-occluded-windows',
@@ -94,7 +98,22 @@ class BrowserManager:
                     '--no-first-run',
                     '--no-default-browser-check',
                     '--disable-extensions-file-access-check',
-                    '--disable-extensions-http-throttling'
+                    '--disable-extensions-http-throttling',
+                    '--disable-component-extensions-with-background-pages',
+                    '--disable-background-timer-throttling',
+                    '--disable-backgrounding-occluded-windows',
+                    '--disable-renderer-backgrounding',
+                    '--disable-field-trial-config',
+                    '--disable-back-forward-cache',
+                    '--disable-hang-monitor',
+                    '--disable-prompt-on-repost',
+                    '--disable-domain-reliability',
+                    '--disable-component-update',
+                    '--disable-background-networking',
+                    '--use-mock-keychain',
+                    '--force-fieldtrials=*BackgroundTracing/default/',
+                    '--enable-features=NetworkService,NetworkServiceLogging',
+                    '--disable-features=TranslateUI,BlinkGenPropertyTrees'
                 ])
 
             self.browser = await self.playwright.chromium.launch(**launch_options)
@@ -121,25 +140,41 @@ class BrowserManager:
             import os
             os.makedirs(self.user_data_dir, exist_ok=True)
 
-            # コンテキスト作成オプション
+            # より人間らしいビューポートサイズ（ランダム化）
+            viewport_options = [
+                {'width': 1920, 'height': 1080},
+                {'width': 1366, 'height': 768},
+                {'width': 1536, 'height': 864},
+                {'width': 1440, 'height': 900},
+                {'width': 1600, 'height': 900},
+            ]
+            selected_viewport = random.choice(viewport_options)
+
+            # コンテキスト作成オプション（より人間らしい設定）
             context_options = {
-                'viewport': {'width': 1920, 'height': 1080},
+                'viewport': selected_viewport,
                 'user_agent': random.choice(self.user_agents),
                 'java_script_enabled': True,
                 'accept_downloads': False,
                 'ignore_https_errors': True,
                 'bypass_csp': True,
                 'storage_state': f"{self.user_data_dir}/state.json",  # Cookie保存
+                'locale': 'ja-JP',
+                'timezone_id': 'Asia/Tokyo',
+                'permissions': ['geolocation'],
+                'geolocation': {'latitude': 35.6762, 'longitude': 139.6503},  # 東京
                 'extra_http_headers': {
-                    'Accept-Language': 'ja-JP,ja;q=0.9,en;q=0.8',
+                    'Accept-Language': 'ja-JP,ja;q=0.9,en-US;q=0.8,en;q=0.7',
                     'Accept-Encoding': 'gzip, deflate, br',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
                     'Upgrade-Insecure-Requests': '1',
                     'Sec-Fetch-Site': 'none',
                     'Sec-Fetch-Mode': 'navigate',
                     'Sec-Fetch-User': '?1',
                     'Sec-Fetch-Dest': 'document',
-                    'Cache-Control': 'no-cache'
+                    'Cache-Control': 'max-age=0',
+                    'DNT': '1',
+                    'Connection': 'keep-alive'
                 }
             }
 
@@ -173,31 +208,66 @@ class BrowserManager:
             context: ブラウザコンテキスト
         """
         try:
-            # WebDriverフラグの無効化とその他のステルス設定
+            # より高度なWebDriverフラグの削除とステルス設定
             await context.add_init_script("""
-                // WebDriverフラグの削除
+                // WebDriverフラグの完全削除
                 Object.defineProperty(navigator, 'webdriver', {
                     get: () => undefined,
                 });
 
-                // Chrome検出の回避
+                // webdriver プロパティを削除
+                delete navigator.__proto__.webdriver;
+
+                // Chrome検出の回避（より詳細）
                 window.chrome = {
-                    runtime: {},
+                    runtime: {
+                        onConnect: undefined,
+                        onMessage: undefined
+                    },
+                    app: {
+                        isInstalled: false,
+                        InstallState: {
+                            DISABLED: 'disabled',
+                            INSTALLED: 'installed',
+                            NOT_INSTALLED: 'not_installed'
+                        },
+                        RunningState: {
+                            CANNOT_RUN: 'cannot_run',
+                            READY_TO_RUN: 'ready_to_run',
+                            RUNNING: 'running'
+                        }
+                    }
                 };
 
-                // プラグイン情報の偽装
+                // プラグイン情報の偽装（より現実的）
                 Object.defineProperty(navigator, 'plugins', {
-                    get: () => [1, 2, 3, 4, 5],
+                    get: () => ({
+                        length: 3,
+                        0: { name: 'Chrome PDF Plugin', filename: 'internal-pdf-viewer' },
+                        1: { name: 'Chrome PDF Viewer', filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai' },
+                        2: { name: 'Native Client', filename: 'internal-nacl-plugin' }
+                    }),
                 });
 
                 // 言語設定
                 Object.defineProperty(navigator, 'languages', {
-                    get: () => ['ja-JP', 'ja', 'en'],
+                    get: () => ['ja-JP', 'ja', 'en-US', 'en'],
                 });
 
-                // プラットフォーム情報
+                // プラットフォーム情報（ランダム化）
+                const platforms = ['Win32', 'MacIntel', 'Linux x86_64'];
+                const randomPlatform = platforms[Math.floor(Math.random() * platforms.length)];
                 Object.defineProperty(navigator, 'platform', {
-                    get: () => 'Win32',
+                    get: () => randomPlatform,
+                });
+
+                // ハードウェア情報の偽装
+                Object.defineProperty(navigator, 'hardwareConcurrency', {
+                    get: () => Math.floor(Math.random() * 8) + 4, // 4-12コア
+                });
+
+                Object.defineProperty(navigator, 'deviceMemory', {
+                    get: () => [4, 8, 16][Math.floor(Math.random() * 3)], // 4GB, 8GB, 16GB
                 });
 
                 // 権限API
@@ -208,26 +278,61 @@ class BrowserManager:
                         originalQuery(parameters)
                 );
 
-                // WebGL情報の偽装
+                // WebGL情報の偽装（より現実的）
                 const getParameter = WebGLRenderingContext.getParameter;
                 WebGLRenderingContext.prototype.getParameter = function(parameter) {
                     if (parameter === 37445) {
-                        return 'Intel Inc.';
+                        return 'Google Inc. (Intel)';
                     }
                     if (parameter === 37446) {
-                        return 'Intel(R) Iris(TM) Graphics 6100';
+                        return 'ANGLE (Intel, Intel(R) UHD Graphics 620 Direct3D11 vs_5_0 ps_5_0, D3D11)';
                     }
                     return getParameter(parameter);
                 };
 
-                // 拡張機能検出の回避
-                Object.defineProperty(navigator, 'userAgent', {
-                    get: () => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                // バッテリー情報の偽装
+                Object.defineProperty(navigator, 'getBattery', {
+                    get: () => () => Promise.resolve({
+                        charging: Math.random() > 0.5,
+                        chargingTime: Math.random() * 3600,
+                        dischargingTime: Math.random() * 7200,
+                        level: Math.random()
+                    }),
+                });
+
+                // 接続情報の偽装
+                Object.defineProperty(navigator, 'connection', {
+                    get: () => ({
+                        effectiveType: '4g',
+                        rtt: Math.floor(Math.random() * 100) + 50,
+                        downlink: Math.random() * 10 + 1
+                    }),
                 });
 
                 // プライバシー拡張機能の検出を回避
                 delete window.onerror;
                 delete window.onunhandledrejection;
+
+                // 自動化検出スクリプトの無効化
+                const originalEval = window.eval;
+                window.eval = function(script) {
+                    if (script.includes('webdriver') || script.includes('automation')) {
+                        return undefined;
+                    }
+                    return originalEval.call(this, script);
+                };
+
+                // マウスイベントの自然化
+                let lastMouseMove = Date.now();
+                document.addEventListener('mousemove', () => {
+                    lastMouseMove = Date.now();
+                });
+
+                // キーボードイベントの自然化
+                let lastKeyPress = Date.now();
+                document.addEventListener('keydown', () => {
+                    lastKeyPress = Date.now();
+                });
             """)
 
             self.logger.info("ステルスモードを設定しました")
