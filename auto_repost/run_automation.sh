@@ -5,9 +5,11 @@
 
 # スクリプトの設定
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VENV_PATH="/home/koou/dev/test/android_automate/x/venv"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+VENV_PATH="$PROJECT_ROOT/venv"
 PYTHON_SCRIPT="$SCRIPT_DIR/main.py"
 LOG_DIR="$SCRIPT_DIR/logs"
+ENV_FILE="$PROJECT_ROOT/.env"
 TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
 
 # ログディレクトリの作成
@@ -84,17 +86,35 @@ echo "  - ヘッドレスモード: $([ -n "$HEADLESS_MODE" ] && echo "ON" || ec
 echo "  - 最大ポスト数: $MAX_POSTS" | tee -a "$EXECUTION_LOG"
 echo "  - デバッグモード: $([ -n "$DEBUG_MODE" ] && echo "ON" || echo "OFF")" | tee -a "$EXECUTION_LOG"
 echo "  - Slack通知: $([ -n "$SKIP_SLACK" ] && echo "OFF" || echo "ON")" | tee -a "$EXECUTION_LOG"
+echo "  - プロジェクトルート: $PROJECT_ROOT" | tee -a "$EXECUTION_LOG"
 echo "  - 仮想環境: $VENV_PATH" | tee -a "$EXECUTION_LOG"
 echo "  - Pythonスクリプト: $PYTHON_SCRIPT" | tee -a "$EXECUTION_LOG"
+echo "  - 設定ファイル: $ENV_FILE" | tee -a "$EXECUTION_LOG"
 
 # 前提条件のチェック
 check_prerequisites() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - 前提条件をチェック中..." | tee -a "$EXECUTION_LOG"
 
-    # 仮想環境の存在確認
+    # 仮想環境の存在確認（複数の候補をチェック）
     if [ ! -d "$VENV_PATH" ]; then
-        echo "エラー: 仮想環境が見つかりません: $VENV_PATH" | tee -a "$ERROR_LOG"
-        return 1
+        # 代替パス1: スクリプトと同じディレクトリ
+        ALT_VENV_PATH1="$SCRIPT_DIR/venv"
+        # 代替パス2: 現在のディレクトリ
+        ALT_VENV_PATH2="$(pwd)/venv"
+
+        if [ -d "$ALT_VENV_PATH1" ]; then
+            VENV_PATH="$ALT_VENV_PATH1"
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - 仮想環境を発見: $VENV_PATH" | tee -a "$EXECUTION_LOG"
+        elif [ -d "$ALT_VENV_PATH2" ]; then
+            VENV_PATH="$ALT_VENV_PATH2"
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - 仮想環境を発見: $VENV_PATH" | tee -a "$EXECUTION_LOG"
+        else
+            echo "エラー: 仮想環境が見つかりません。以下の場所を確認しました:" | tee -a "$ERROR_LOG"
+            echo "  - $VENV_PATH" | tee -a "$ERROR_LOG"
+            echo "  - $ALT_VENV_PATH1" | tee -a "$ERROR_LOG"
+            echo "  - $ALT_VENV_PATH2" | tee -a "$ERROR_LOG"
+            return 1
+        fi
     fi
 
     # Pythonスクリプトの存在確認
@@ -103,11 +123,26 @@ check_prerequisites() {
         return 1
     fi
 
-    # .envファイルの存在確認
-    ENV_FILE="/home/koou/dev/test/android_automate/x/.env"
+    # .envファイルの存在確認（複数の候補をチェック）
     if [ ! -f "$ENV_FILE" ]; then
-        echo "エラー: .envファイルが見つかりません: $ENV_FILE" | tee -a "$ERROR_LOG"
-        return 1
+        # 代替パス1: スクリプトと同じディレクトリ
+        ALT_ENV_FILE1="$SCRIPT_DIR/.env"
+        # 代替パス2: 現在のディレクトリ
+        ALT_ENV_FILE2="$(pwd)/.env"
+
+        if [ -f "$ALT_ENV_FILE1" ]; then
+            ENV_FILE="$ALT_ENV_FILE1"
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - .envファイルを発見: $ENV_FILE" | tee -a "$EXECUTION_LOG"
+        elif [ -f "$ALT_ENV_FILE2" ]; then
+            ENV_FILE="$ALT_ENV_FILE2"
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - .envファイルを発見: $ENV_FILE" | tee -a "$EXECUTION_LOG"
+        else
+            echo "エラー: .envファイルが見つかりません。以下の場所を確認しました:" | tee -a "$ERROR_LOG"
+            echo "  - $ENV_FILE" | tee -a "$ERROR_LOG"
+            echo "  - $ALT_ENV_FILE1" | tee -a "$ERROR_LOG"
+            echo "  - $ALT_ENV_FILE2" | tee -a "$ERROR_LOG"
+            return 1
+        fi
     fi
 
     echo "$(date '+%Y-%m-%d %H:%M:%S') - 前提条件チェック完了" | tee -a "$EXECUTION_LOG"
@@ -133,6 +168,9 @@ activate_venv() {
 # Pythonスクリプトの実行
 execute_python_script() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Pythonスクリプト実行開始..." | tee -a "$EXECUTION_LOG"
+
+    # 環境変数の設定
+    export ENV_FILE_PATH="$ENV_FILE"
 
     # Pythonスクリプトの実行
     cd "$SCRIPT_DIR"

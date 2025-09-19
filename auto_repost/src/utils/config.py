@@ -35,13 +35,34 @@ class Config:
         .envファイルから設定を読み込み
 
         Args:
-            env_path: .envファイルのパス（デフォルト: /home/koou/dev/test/android_automate/x/.env）
+            env_path: .envファイルのパス（自動検出）
 
         Returns:
             Config: 設定インスタンス
         """
         if env_path is None:
-            env_path = "/home/koou/dev/test/android_automate/x/.env"
+            # 環境変数から.envファイルのパスを取得
+            env_path = os.getenv('ENV_FILE_PATH')
+
+            if env_path is None:
+                # 自動検出: 複数の候補をチェック
+                current_dir = Path.cwd()
+                script_dir = Path(__file__).parent.parent.parent
+
+                candidates = [
+                    current_dir / '.env',
+                    script_dir / '.env',
+                    script_dir.parent / '.env',
+                    Path.home() / 'dev/test/android_automate/x/.env'  # 開発環境用フォールバック
+                ]
+
+                for candidate in candidates:
+                    if candidate.exists():
+                        env_path = str(candidate)
+                        break
+
+                if env_path is None:
+                    raise FileNotFoundError(f".envファイルが見つかりません。以下の場所を確認しました: {[str(c) for c in candidates]}")
 
         # .envファイルの読み込み
         if os.path.exists(env_path):
