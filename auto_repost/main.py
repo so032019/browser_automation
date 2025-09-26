@@ -97,7 +97,7 @@ async def main():
         # 各ハンドラーの初期化
         login_handler = LoginHandler(page, config)
         search_handler = SearchHandler(page)
-        action_handler = ActionHandler(page)
+        action_handler = ActionHandler(page, config)  # configを渡してBAN対策機能を有効化
 
         # 1. ログイン処理
         logger.info("ログイン処理開始")

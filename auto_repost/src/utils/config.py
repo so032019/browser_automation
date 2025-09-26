@@ -11,6 +11,26 @@ from dotenv import load_dotenv
 
 
 @dataclass
+class BanPreventionConfig:
+    """BAN対策設定クラス"""
+    enable_dummy_actions: bool = True
+    enable_home_browsing: bool = True
+    home_scroll_count_min: int = 2
+    home_scroll_count_max: int = 4
+    home_post_check_count_min: int = 1
+    home_post_check_count_max: int = 2
+    post_reading_duration_min: float = 2.0
+    post_reading_duration_max: float = 5.0
+    reply_check_count_min: int = 1
+    reply_check_count_max: int = 2
+    pre_action_wait_min: float = 1.0
+    pre_action_wait_max: float = 3.0
+    post_action_wait_min: float = 1.0
+    post_action_wait_max: float = 2.0
+    delay_variation_factor: float = 0.5
+
+
+@dataclass
 class Config:
     """設定管理クラス"""
     username: str
@@ -28,6 +48,8 @@ class Config:
     slack_workspace: str = "default"
     # ログ設定
     log_dir: str = "logs"
+    # BAN対策設定
+    ban_prevention: BanPreventionConfig = None
 
     @classmethod
     def from_env(cls, env_path: str = None) -> 'Config':
@@ -95,6 +117,25 @@ class Config:
         # ログ設定
         log_dir = os.getenv('LOG_DIR', 'logs')
 
+        # BAN対策設定
+        ban_prevention = BanPreventionConfig(
+            enable_dummy_actions=os.getenv('ENABLE_BAN_PREVENTION', 'true').lower() == 'true',
+            enable_home_browsing=os.getenv('ENABLE_HOME_BROWSING', 'true').lower() == 'true',
+            home_scroll_count_min=int(os.getenv('HOME_SCROLL_COUNT_MIN', '2')),
+            home_scroll_count_max=int(os.getenv('HOME_SCROLL_COUNT_MAX', '4')),
+            home_post_check_count_min=int(os.getenv('HOME_POST_CHECK_COUNT_MIN', '1')),
+            home_post_check_count_max=int(os.getenv('HOME_POST_CHECK_COUNT_MAX', '2')),
+            post_reading_duration_min=float(os.getenv('POST_READING_MIN', '2.0')),
+            post_reading_duration_max=float(os.getenv('POST_READING_MAX', '5.0')),
+            reply_check_count_min=int(os.getenv('REPLY_CHECK_MIN', '1')),
+            reply_check_count_max=int(os.getenv('REPLY_CHECK_MAX', '2')),
+            pre_action_wait_min=float(os.getenv('PRE_ACTION_WAIT_MIN', '1.0')),
+            pre_action_wait_max=float(os.getenv('PRE_ACTION_WAIT_MAX', '3.0')),
+            post_action_wait_min=float(os.getenv('POST_ACTION_WAIT_MIN', '1.0')),
+            post_action_wait_max=float(os.getenv('POST_ACTION_WAIT_MAX', '2.0')),
+            delay_variation_factor=float(os.getenv('DELAY_VARIATION_FACTOR', '0.5'))
+        )
+
         return cls(
             username=username,
             password=password,
@@ -108,7 +149,8 @@ class Config:
             slack_api_url=slack_api_url,
             slack_api_key=slack_api_key,
             slack_workspace=slack_workspace,
-            log_dir=log_dir
+            log_dir=log_dir,
+            ban_prevention=ban_prevention
         )
 
     def validate(self) -> bool:
@@ -142,7 +184,7 @@ class Config:
         Returns:
             dict: 設定辞書
         """
-        return {
+        config_dict = {
             'username': self.username,
             'password': '***',  # パスワードはマスク
             'max_posts_per_session': self.max_posts_per_session,
@@ -157,3 +199,19 @@ class Config:
             'slack_workspace': self.slack_workspace,
             'log_dir': self.log_dir
         }
+
+        # BAN対策設定を追加
+        if self.ban_prevention:
+            config_dict['ban_prevention'] = {
+                'enable_dummy_actions': self.ban_prevention.enable_dummy_actions,
+                'enable_home_browsing': self.ban_prevention.enable_home_browsing,
+                'home_scroll_count_range': f"{self.ban_prevention.home_scroll_count_min}-{self.ban_prevention.home_scroll_count_max}",
+                'home_post_check_count_range': f"{self.ban_prevention.home_post_check_count_min}-{self.ban_prevention.home_post_check_count_max}",
+                'post_reading_duration_range': f"{self.ban_prevention.post_reading_duration_min}-{self.ban_prevention.post_reading_duration_max}",
+                'reply_check_count_range': f"{self.ban_prevention.reply_check_count_min}-{self.ban_prevention.reply_check_count_max}",
+                'pre_action_wait_range': f"{self.ban_prevention.pre_action_wait_min}-{self.ban_prevention.pre_action_wait_max}",
+                'post_action_wait_range': f"{self.ban_prevention.post_action_wait_min}-{self.ban_prevention.post_action_wait_max}",
+                'delay_variation_factor': self.ban_prevention.delay_variation_factor
+            }
+
+        return config_dict

@@ -15,17 +15,37 @@ from src.utils.selectors import SelectorManager
 class ActionHandler:
     """アクション処理クラス"""
 
-    def __init__(self, page: Page):
+    def __init__(self, page: Page, config=None):
         """
         アクション処理の初期化
 
         Args:
             page: Playwrightページインスタンス
+            config: 設定オブジェクト（BAN対策設定を含む）
         """
         self.page = page
         self.logger = Logger()
         self.selector_manager = SelectorManager()
         self.post_action_selectors = self.selector_manager.get_post_action_selectors()
+        self.config = config
+
+        # BAN対策コンポーネントの初期化
+        if config and config.ban_prevention and config.ban_prevention.enable_dummy_actions:
+            from src.utils.dummy_action_executor import DummyActionExecutor
+            from src.utils.enhanced_delay_manager import EnhancedDelayManager
+            from src.utils.behavior_orchestrator import BehaviorOrchestrator
+
+            self.dummy_executor = DummyActionExecutor(page)
+            self.delay_manager = EnhancedDelayManager()
+            self.orchestrator = BehaviorOrchestrator(page)
+            self.ban_prevention_enabled = True
+            self.logger.info("BAN対策機能が有効化されました")
+        else:
+            self.dummy_executor = None
+            self.delay_manager = None
+            self.orchestrator = None
+            self.ban_prevention_enabled = False
+            self.logger.info("BAN対策機能は無効です")
 
         # 人間らしい動作のための設定
         self.human_behavior = {
@@ -725,7 +745,23 @@ class ActionHandler:
 
     async def perform_all_actions(self, url: str) -> dict:
         """
-        指定されたポストで全てのアクションを実行
+        指定されたポストで全てのアクションを実行（BAN対策機能付き）
+
+        Args:
+            url: ポストURL
+
+        Returns:
+            dict: 実行結果
+        """
+        # BAN対策機能が有効な場合は拡張フローを使用
+        if self.ban_prevention_enabled and self.orchestrator:
+            return await self._perform_enhanced_actions(url)
+        else:
+            return await self._perform_legacy_actions(url)
+
+    async def _perform_enhanced_actions(self, url: str) -> dict:
+        """
+        BAN対策機能付きのアクション実行
 
         Args:
             url: ポストURL
@@ -738,7 +774,122 @@ class ActionHandler:
             'navigation': False,
             'follow': False,
             'repost': False,
-            'like': False
+            'like': False,
+            'ban_prevention_applied': True
+        }
+
+        try:
+            # 拡張されたポストアクション実行
+            success = await self.orchestrator.execute_enhanced_post_action(
+                url, self._execute_main_actions
+            )
+
+            if success:
+                # 成功時は全てのアクションが実行されたとみなす
+                results['navigation'] = True
+                results['follow'] = True
+                results['repost'] = True
+                results['like'] = True
+
+            return results
+
+        except Exception as e:
+            self.logger.error(f"拡張アクション実行中にエラー: {url}", exception=e)
+            return results
+
+    async def _execute_main_actions(self, url: str) -> bool:
+        """
+        メインアクション実行（BehaviorOrchestratorから呼び出される）
+
+        Args:
+            url: ポストURL
+
+        Returns:
+            bool: 実行成功/失敗
+        """
+        try:
+            # 事前に全ての状態をチェック
+            pre_check_results = await self._check_all_action_status()
+            self.logger.info("=" * 40)
+            self.logger.info("📋 事前状態チェック結果")
+            self.logger.info(f"  👤 フォロー済み: {pre_check_results['already_following']}")
+            self.logger.info(f"  🔄 リポスト済み: {pre_check_results['already_reposted']}")
+            self.logger.info(f"  ❤️  いいね済み: {pre_check_results['already_liked']}")
+            self.logger.info("=" * 40)
+
+            # 全て処理済みの場合はスキップ
+            if (pre_check_results['already_following'] and
+                pre_check_results['already_reposted'] and
+                pre_check_results['already_liked']):
+                self.logger.info("✅ 全てのアクションが既に実行済みです。")
+                return True
+
+            # 実行予定のアクションをログ出力
+            pending_actions = []
+            if not pre_check_results['already_following']:
+                pending_actions.append("👤フォロー")
+            if not pre_check_results['already_reposted']:
+                pending_actions.append("🔄リポスト")
+            if not pre_check_results['already_liked']:
+                pending_actions.append("❤️いいね")
+
+            if pending_actions:
+                self.logger.info(f"🎯 実行予定のアクション: {', '.join(pending_actions)}")
+
+            # 人間らしい順序でアクション実行
+            actions = []
+            if not pre_check_results['already_following']:
+                actions.append('follow')
+            if not pre_check_results['already_reposted']:
+                actions.append('repost')
+            if not pre_check_results['already_liked']:
+                actions.append('like')
+
+            if random.random() < 0.3:  # 30%の確率で順序を変更
+                random.shuffle(actions)
+                self.logger.debug(f"アクション順序を変更: {actions}")
+
+            # アクション実行
+            success_count = 0
+            for action in actions:
+                if action == 'follow':
+                    if await self.follow_user():
+                        success_count += 1
+                elif action == 'repost':
+                    if await self.repost_content():
+                        success_count += 1
+                elif action == 'like':
+                    if await self.like_post():
+                        success_count += 1
+
+                # アクション間の遅延（拡張遅延管理器を使用）
+                if self.delay_manager:
+                    delay = self.delay_manager.get_action_interval_delay(action)
+                    await asyncio.sleep(delay)
+
+            return success_count > 0
+
+        except Exception as e:
+            self.logger.error(f"メインアクション実行エラー: {e}", exception=e)
+            return False
+
+    async def _perform_legacy_actions(self, url: str) -> dict:
+        """
+        従来のアクション実行（BAN対策なし）
+
+        Args:
+            url: ポストURL
+
+        Returns:
+            dict: 実行結果
+        """
+        results = {
+            'url': url,
+            'navigation': False,
+            'follow': False,
+            'repost': False,
+            'like': False,
+            'ban_prevention_applied': False
         }
 
         try:
